@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         String   @default("USER")
+  vendor       Vendor?
+  orders       Order[]
+  createdAt    DateTime @default(now())
+}
+
+model Vendor {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id])
+  businessName String
+  products     Product[]
+  createdAt    DateTime  @default(now())
+}
+
+model Product {
+  id                String   @id @default(cuid())
+  vendorId          String
+  vendor            Vendor   @relation(fields: [vendorId], references: [id])
+  title             String
+  description       String
+  priceCents        Int
+  currency          String
+  imageUrl          String?
+  inventoryQuantity Int
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  orders OrderItem[]
+
+  @@index([vendorId])
+  @@index([title])
+}
+
+model Order {
+  id         String       @id @default(cuid())
+  userId     String
+  user       User         @relation(fields: [userId], references: [id])
+  totalCents Int
+  currency   String
+  status     String       @default("PENDING")
+  createdAt  DateTime     @default(now())
+  items      OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id                   String  @id @default(cuid())
+  orderId              String
+  order                Order   @relation(fields: [orderId], references: [id])
+  productId            String
+  product              Product @relation(fields: [productId], references: [id])
+  quantity             Int
+  priceCentsAtPurchase Int
+}
+
